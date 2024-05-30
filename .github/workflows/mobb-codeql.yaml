@@ -22,14 +22,7 @@ jobs:
       statuses: write
       contents: read
       actions: read      
-
-    strategy:
-      fail-fast: false
-      matrix:
-        language: ["javascript-typescript"]
-        # CodeQL supports [ 'c-cpp', 'csharp', 'go', 'java-kotlin', 'javascript-typescript', 'python', 'ruby', 'swift' ]
-        codeql_output_filename: ["javascript.sarif"]
-
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -39,17 +32,17 @@ jobs:
         with:
           languages: ${{ matrix.language }}
 
-      - name: Perform CodeQL analysis
-        uses: github/codeql-action/analyze@v2
-        with:
-          category: "/language:${{ matrix.language }}"
-          output: results
+      - name: Perform CodeQL Analysis
+        run: |
+          mkdir -p codeql-output
+          codeql database create codeql-db --language=javascript --source-root=.
+          codeql database analyze codeql-db --format=sarif --output=codeql-output/results.sarif
 
       - name: Run Mobb on the findings and get fixes
         if: always()
         uses: mobb-dev/action/review@v1.1
         with:
-          report-file: results/${{ matrix.codeql_output_filename }}
+          report-file: output/results.sarif
           api-key: ${{ secrets.MOBB_API_TOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           scanner: codeql
